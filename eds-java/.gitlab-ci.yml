@@ -1,0 +1,33 @@
+stages:
+  - build
+  - dockerize
+
+maven:
+  stage: build
+  image: maven:alpine
+  script:
+    - mvn package
+  artifacts:
+   paths:
+       - target/EDSsample-1.0-SNAPSHOT-jar-with-dependencies.jar
+   expire_in: 2 day
+  only:
+    - master
+  tags:
+    - docker
+
+dockerize:
+  stage: dockerize
+  tags:
+    - docker
+    - privileged
+  services:
+    - docker:dind
+  script:
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
+    - docker build -t gitlab.comtip.net:4567/georg/eds-java .
+    - docker push gitlab.comtip.net:4567/georg/eds-java
+  dependencies:
+    - maven
+  only:
+    - master
